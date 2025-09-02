@@ -77,11 +77,15 @@ namespace RelationsNaN.Controllers
                 return NotFound();
             }
 
-            var game = await _context.Game.FindAsync(id);
+            var game = await _context.Game.Include(g => g.Platforms).FirstOrDefaultAsync(g => g.Id == id);
+
             if (game == null)
             {
                 return NotFound();
             }
+
+            
+            ViewBag.Platforms = new SelectList(_context.Platform, "Id", "Name", game.Platforms);
             ViewData["GenreId"] = new SelectList(_context.Genre, "Id", "Name", game.GenreId);
             return View(game);
         }
@@ -104,6 +108,7 @@ namespace RelationsNaN.Controllers
                 {
                     _context.Update(game);
                     await _context.SaveChangesAsync();
+                    
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -160,5 +165,42 @@ namespace RelationsNaN.Controllers
         {
             return _context.Game.Any(e => e.Id == id);
         }
+
+        [HttpPost]
+        public async Task<IActionResult> AddPlatform(int id, int platformId)
+        {
+            var game = await _context.Game.Include(g => g.Platforms).FirstOrDefaultAsync(g => g.Id == id);
+
+            if (game == null)
+            {
+                return NotFound();
+            }
+            if (!game.Platforms.Any(p => p.Id == platformId))
+            {
+                var platform = await _context.Platform.FindAsync(platformId);
+                if (platform != null)
+                {
+                    game.Platforms.Add(platform);
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            return RedirectToAction(nameof(Edit), new { id = game.Id });
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> RemovePlatform(int id, int platformId)
+        {
+            var platform = await _context.Platform.FindAsync(id);
+            if(platform != null)
+            {
+                _context.Platform.Remove(platform);
+            }
+
+            await _context.SaveChangesAsync();
+            return RedirectToAction(nameof(Index));
+        }
+       
+
     }
 }

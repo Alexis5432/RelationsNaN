@@ -153,5 +153,8 @@ namespace RelationsNaN.Controllers
         {
             return _context.Genre.Any(e => e.Id == id);
         }
+
+       
     }
 }
+
